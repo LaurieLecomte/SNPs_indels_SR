@@ -13,7 +13,7 @@ CALLS_DIR="05_calls"              # results directory
 CPU=2                            # number of threads to use per job
 
 # LOAD REQUIRED MODULES
-module load bcftools
+module load bcftools/1.16
 
-# 1. Call SNPs only : required -I option
-bcftools mpileup -Ou -f $REF -r $CHR -b $BAM_LIST -a AD,DP,SP,ADF,ADR -q 5 --threads $CPU | bcftools call -a GP,GQ -mv -Oz --threads $CPU > $OUT_DIR/"$CHR".vcf.gz 
+# 1. Call SNPs and indels
+bcftools mpileup -Ou -f $REF -r $CHR -b $BAM_LIST -a AD,DP,SP,ADF,ADR -q 5 --threads $CPU | bcftools call -a GP,GQ -mv -Oz --threads $CPU > $CALLS_DIR/"$CHR".vcf.gz 
