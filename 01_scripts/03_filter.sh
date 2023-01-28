@@ -31,7 +31,7 @@ DP_MISS_VCF="$FILT_DIR/"$(basename -s .vcf.gz $MERGED_VCF)"_"$MAX_ALL"all_maf"$M
 module load bcftools
 
 # 1. Add tags
-bcftools +fill-tags $MERGED_VCF -Oz -- -t all --threads $CPU > $TAGGED_VCF
+bcftools +fill-tags $MERGED_VCF --threads $CPU -Oz -- -t all > $TAGGED_VCF
 
 # Filter with same criteria as SVs
 # 2. Filter for max number of alleles = extract biallelic sites
