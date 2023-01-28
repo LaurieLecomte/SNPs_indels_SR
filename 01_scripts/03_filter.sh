@@ -12,6 +12,7 @@ CALLS_DIR="05_calls"
 MERGED_DIR="06_merged"
 MERGED_VCF="$MERGED_DIR/SNPs_indels.vcf.gz"
 VCF_LIST="02_infos/VCF_list.txt"
+FILT_DIR="07_filtered"
 
 CPU=4
 
@@ -46,7 +47,7 @@ bcftools filter -i "INFO/MAF >= $MIN_MAF" $MAX_ALL_VCF -O z --threads $CPU > $MI
 #bcftools filter -i "N_PASS(GT != 'mis' & FMT/DP > $MIN_DP) > 30"
 
 # Set genotypes to missing if sample's DP < $MIN_DP, then filter for sites genotyped in > $MAX_MISS proportion of samples
-bcftools +setGT $MIN_MAF_VCF -- -t q -n . -i "FORMAT/DP < $MIN_DP" --threads $CPU | bcftools view -i "F_MISSING < $MAX_MISS " -O z --threads $CPU > $DP_MISS_VCF
+bcftools +setGT --threads $CPU $MIN_MAF_VCF -- -t q -n . -i "FORMAT/DP < $MIN_DP" | bcftools view -i "F_MISSING < $MAX_MISS " -O z --threads $CPU > $DP_MISS_VCF
 
 # 5. Index with
 tabix -p vcf $DP_MISS_VCF
