@@ -53,12 +53,12 @@ bcftools +setGT --threads $CPU $MIN_MAF_VCF -- -t q -n . -i "FORMAT/DP < $MIN_DP
 tabix -p vcf $DP_MISS_VCF
 
 # 6. Split SNPs and indels
-bcftools filter -i "INFO/INDEL=1" $DP_MISS_VCF -O z --threads $CPU > $FILT_DIR/filtered_indels.vcf.gz
+bcftools filter -i "INFO/INDEL=1" $DP_MISS_VCF -O z --threads $CPU > $FILT_DIR/indels/filtered_indels.vcf.gz
 #bcftools filter -i "INFO/INDEL=1" $DP_MISS_VCF -O z --threads $CPU > "$FILT_DIR/indels__"$MAX_ALL"all_maf"$MIN_MAF"_FM"$MAX_MISS"_minDP"$MIN_DP".vcf.gz"
 
 tabix -p vcf $FILT_DIR/filtered_indels.vcf.gz
 
-bcftools filter -e "INFO/INDEL=1" $DP_MISS_VCF -O z --threads $CPU > $FILT_DIR/filtered_SNPs.vcf.gz
+bcftools filter -e "INFO/INDEL=1" $DP_MISS_VCF -O z --threads $CPU > $FILT_DIR/SNPs/filtered_SNPs.vcf.gz
 #bcftools filter -i "INFO/INDEL=1" $DP_MISS_VCF -O z --threads $CPU > "$FILT_DIR/SNPs__"$MAX_ALL"all_maf"$MIN_MAF"_FM"$MAX_MISS"_minDP"$MIN_DP".vcf.gz"
 
 tabix -p vcf $FILT_DIR/filtered_SNPs.vcf.gz
