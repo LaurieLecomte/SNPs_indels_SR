@@ -4,7 +4,7 @@
 # Run this script from SNPs_indels_SR directory using this command :
 
 # manitou
-# srun -c 4 --mem=10G -p medium --time=7-00:00:00 -J 04_filter_pop -o log/04_filter_pop_%j.log 01_scripts/04_filter_pop.sh &
+# srun -c 4 --mem=20G -p medium --time=7-00:00:00 -J 04_filter_pop -o log/04_filter_pop_%j.log 01_scripts/04_filter_pop.sh &
 
 # valeria
 # srun -c 4 --mem=10G -p ibis_medium --time=7-00:00:00 -J 04_filter_pop -o log/04_filter_pop_%j.log 01_scripts/04_filter_pop.sh &
@@ -31,6 +31,8 @@ MIN_DP=4
 MAX_DP=80 # arbitrary threshold of 5 * anticipated SR sequencing coverage, 5 * 16 
 
 MIN_MAF=0.05
+MAX_MAF=0.95
+
 MAX_MISS=0.5
 
 # LOAD REQUIRED MODULES
@@ -39,15 +41,15 @@ module load bcftools/1.13
 
 
 # 1. Add tags
-bcftools +fill-tags $FILT_DIR/SNPs_indels_DP"$MIN_DP"_GQ"$MIN_GQ".vcf -Oz -- -t all > $FILT_DIR/SNPs_indels_DP"$MIN_DP"_GQ"$MIN_GQ".tagged.vcf.gz
+bcftools +fill-tags --threads $CPU $FILT_DIR/SNPs_indels_DP"$MIN_DP"_GQ"$MIN_GQ".vcf.gz -Oz -- -t AC,AC_Hom,AC_Het,AC_Hemi,AF,AN,NS,ExcHet,HWE,MAF,F_MISSING > $FILT_DIR/SNPs_indels_DP"$MIN_DP"_GQ"$MIN_GQ".tagged.vcf.gz
 
 # 2. Filter on MAF and proportion of missing genotypes
-bcftools view --max-alleles 2 $FILT_DIR/SNPs_indels_DP"$MIN_DP"_GQ"$MIN_GQ".tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/SNPs_indels_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+bcftools view --threads $CPU --max-alleles 2 $FILT_DIR/SNPs_indels_DP"$MIN_DP"_GQ"$MIN_GQ".tagged.vcf.gz | bcftools filter --threads $CPU -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/SNPs_indels_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
 
 # 3. Split SNPs and indels
-bcftools filter -i "INFO/INDEL=1" $FILT_DIR/SNPs_indels_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz -O z --threads $CPU > $FILT_DIR/indels/indels_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+bcftools filter --threads $CPU -i "INFO/INDEL=1" $FILT_DIR/SNPs_indels_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz -O z --threads $CPU > $FILT_DIR/indels/indels_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
 tabix -p vcf $FILT_DIR/indels/indels_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
 
-bcftools filter -e "INFO/INDEL=1" $FILT_DIR/SNPs_indels_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz -O z --threads $CPU > $FILT_DIR/SNPs/SNPs_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+bcftools filter --threads $CPU -e "INFO/INDEL=1" $FILT_DIR/SNPs_indels_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz -O z --threads $CPU > $FILT_DIR/SNPs/SNPs_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
 #bcftools filter -i "INFO/INDEL=1" $DP_MISS_VCF -O z --threads $CPU > "$FILT_DIR/SNPs__"$MAX_ALL"all_maf"$MIN_MAF"_FM"$MAX_MISS"_minDP"$MIN_DP".vcf.gz"
 tabix -p vcf $FILT_DIR/SNPs/SNPs_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
