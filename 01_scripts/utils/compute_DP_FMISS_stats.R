@@ -19,6 +19,8 @@ filt_stats_indel <- fread(FILT_STATS_INDEL, col.names = c('CHROM', 'POS', 'DP', 
 
 # 2. Compute basic stats --------------------------------------------------
 variants_stats <- function(x){
+  # Total 
+  print(paste('number of variants :', length(x)))
   # Compute mean
   print(paste('mean :', mean(x)))
   # Compute min and max
