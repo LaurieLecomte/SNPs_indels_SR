@@ -11,7 +11,8 @@
 ### Files
 * A reference genome (`.fasta`) and its index (`.fai`) in `03_genome`
 
-* Bam files for all samples and their indexes. These can be soft-linked/hard_linked in `04_bam` folder for easier handling : if `$BAM_PATH` is the remote path to bam files, use `for file in $(ls -1 $BAM_PATH/*); do ln -s $file ./04_bam; done`. These bam files should be named as `SAMPLEID.bam`, and can be produced using [wgs_sample_preparation pipeline](https://github.com/enormandeau/wgs_sample_preparation)
+* Bam files for all samples and their indexes. These can be soft-linked/hard_linked in `04_bam` folder for easier handling : if `$BAM_PATH` is the remote path to bam files, use `for file in $(ls -1 $BAM_PATH/*); do ln -s $file ./04_bam; done`. These bam files should be named as `SAMPLEID.bam`, and can be produced using [wgs_sample_preparation pipeline](https://github.com/enormandeau/wgs_sample_preparation). 
+  **NOTE** : a unique `RG tag` is required in each bam file's header to allow `bcftools mpileup` and `call` to differentiate bam files and detect different samples. RG tags can be checked using `samtools view -H $BAM_FILE`. If these tags are missing or not unique, see the script [`10_replace_RG.sh`](https://github.com/enormandeau/wgs_sample_preparation/blob/master/01_scripts/10_replace_RG.sh), which also adds unique RG tags *inside* bam files and ensures proper format required for [calling SVs](https://github.com/LaurieLecomte/SVs_short_reads).
 
 * A bam list in `02_infos`. This list can be generated with the following command, where `$BAM_DIR` is the path of the directory where bam files are located : `ls -1 $BAM_DIR/*.bam > 02_infos/bam_list.txt`
 
