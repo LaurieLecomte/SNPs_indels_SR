@@ -30,32 +30,45 @@ CPU=2
 module load bcftools/1.13
 module load htslib/1.13
 
-# 0. Add tags
-#bcftools +fill-tags --threads $CPU $RAW_INDEL -Oz -- -t AC,AC_Hom,AC_Het,AC_Hemi,AF,AN,NS,ExcHet,HWE,MAF,F_MISSING > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz
+# 0. Remove non biallelic sites, assign missing genotype where DP and GQ are too low or too extreme, add tags and remove unwanted contigs from header
+bcftools view -m2 -M2 --threads $CPU $RAW_INDEL | bcftools +setGT --threads $CPU -- -t q -n . -e "FORMAT/DP >= $MIN_DP & FORMAT/DP < $MAX_DP & FORMAT/GQ >= $MIN_GQ & FORMAT/GQ < $MAX_GQ" | bcftools +fill-tags --threads $CPU -- -t AC,AC_Hom,AC_Het,AC_Hemi,AF,AN,NS,ExcHet,HWE,MAF,F_MISSING | bcftools sort | grep -vFf $REGIONS_EX > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_DP"$MIN_DP"_GQ"$MIN_GQ"_tagged.vcf
+bgzip $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_DP"$MIN_DP"_GQ"$MIN_GQ"_tagged.vcf -f
+
+
 
 # 1. Filter on MAF and proportion of missing genotypes, with F_MISS = 0.75, 0.625, 0.125, 0.25, 0.375 
-MAX_MISS=0.75
-bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
-echo "with $MAX_MISS : "$(less $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l)" variants"
+
+for MAX_MISS in 0.75 0.625 0.5 0.375 0.25 0.125 ; 
+do 
+  bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_DP"$MIN_DP"_GQ"$MIN_GQ"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+  echo "with $MAX_MISS : $(zless $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l) variants" ;
+done
 
 
-MAX_MISS=0.625
-bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
-echo "with $MAX_MISS : "$(less $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l)" variants"
+#MAX_MISS=0.75
+#bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+#echo "with $MAX_MISS : $(zless $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l) variants"
 
 
+#MAX_MISS=0.625
+#bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+#echo "with $MAX_MISS : $(zless $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l) variants"
 
-MAX_MISS=0.375
-bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
-echo "with $MAX_MISS : "$(less $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l)" variants"
+#MAX_MISS=0.5
+#bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+#echo "with $MAX_MISS : $(zless $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l) variants"
+
+#MAX_MISS=0.375
+#bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+#echo "with $MAX_MISS : $(zless $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l) variants"
 
 
+#MAX_MISS=0.25
+#bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+#echo "with $MAX_MISS : $(zless $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l) variants"
 
-MAX_MISS=0.25
-bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
-echo "with $MAX_MISS : "$(less $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l)" variants"
 
+#MAX_MISS=0.125
+#bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
+#echo "with $MAX_MISS : $(zless $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l) variants"
 
-MAX_MISS=0.125
-bcftools view --max-alleles 2 $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_tagged.vcf.gz | bcftools filter -i "INFO/MAF >= $MIN_MAF & INFO/MAF <= $MAX_MAF & INFO/F_MISSING <= $MAX_MISS" | bcftools sort -Oz > $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz
-echo "with $MAX_MISS : "$(less $FILT_DIR/"$(basename -s .vcf.gz $RAW_INDEL)"_MAF"$MIN_MAF"_FMISS"$MAX_MISS".vcf.gz | grep -v ^'#' | wc -l)" variants"
