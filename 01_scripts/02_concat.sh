@@ -19,10 +19,7 @@ module load bcftools/1.16
 
 
 # 1. Make a list of VCFs to concatenate
-if [[ ! -f $VCF_LIST ]]
-then
-  ls -1 $CALLS_DIR/*.vcf.gz > $VCF_LIST
-fi
+ls -1 $CALLS_DIR/*.vcf.gz > $VCF_LIST
 
 
 # 2. Concatenate files 
