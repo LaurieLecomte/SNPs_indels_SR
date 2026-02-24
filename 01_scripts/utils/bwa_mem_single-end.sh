@@ -1,20 +1,17 @@
 #!/bin/bash
 
 # First split sample list to align into different files with:
-# cd 04bam
+# cd 04_bam
 # ls -1 *.fq.gz > ../all_samples_for_alignment.txt
 # cd ..
 # mkdir samples_split
 # split -a 4 -l 1 -d all_samples_for_alignment.txt samples_split/samples_split.
 
 ## With GNU Parallel
-# ls -1 samples_split/* | parallel -k -j 10 ./00-scripts/bwa_mem_align_reads_by_n_samples.sh 4 {}
+# ls -1 samples_split/* | parallel -k -j 8 ./01_scripts/utils/bwa_mem_single-end.sh 8 {}
 
 ## With GNU Parallel on slurm
-# ls -1 samples_split/* | parallel -k -j 10 srun -c 4 --mem 20G -p large --time 21-00:00 -J bwaMem -o 10-log_files/bwaMEMsplit_%j.log ./00-scripts/bwa_mem_align_reads_by_n_samples.sh 4 {} \; sleep 0.1 &
-
-## With srun on a single file
-# srun -c 4 --mem 20G -p large --time 21-00:00 -J bwaMem -o 10-log_files/bwaMEMsplit_%j.log ./00-scripts/bwa_mem_align_reads_by_n_samples.sh 4 <SAMPLE_FILE>
+# ls -1 samples_split/* | parallel -k -j 10 srun -c 8 --mem 30G -p large --time 21-00:00 -J bwaMem -o 10-log_files/bwaMEMsplit_%j.log ls -1 samples_split/* | parallel -k -j 10 ./01_scripts/utils/bwa_mem_single-end.sh 8 {}
 
 # Global variables
 GENOMEFOLDER="03_genome"
